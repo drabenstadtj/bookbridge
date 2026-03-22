@@ -1,24 +1,23 @@
 import os
 import re
-import time
-import json
 import subprocess
 import threading
 import uuid
 from pathlib import Path
-from urllib.parse import urljoin, urlparse, quote
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, jsonify, request, render_template, send_from_directory
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
 CALIBRE_LIBRARY = os.environ.get("CALIBRE_LIBRARY", "/calibre-library")
-DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/downloads")
-ANNAS_BASE = "https://annas-archive.org"
+DOWNLOAD_DIR    = os.environ.get("DOWNLOAD_DIR", "/downloads")
+ANNAS_BASE      = "https://annas-archive.org"
+ANNAS_API_KEY   = os.environ.get("ANNAS_ARCHIVE_KEY", "")
 
 # In-memory job tracker
 jobs = {}
@@ -30,30 +29,19 @@ HEADERS = {
 }
 
 FORMAT_ICONS = {
-    "epub": "📖",
-    "pdf": "📄",
-    "mobi": "📱",
-    "azw3": "📱",
-    "fb2": "📝",
-    "djvu": "🗂️",
-    "cbz": "🖼️",
-    "cbr": "🖼️",
+    "epub": "📖", "pdf": "📄", "mobi": "📱", "azw3": "📱",
+    "fb2": "📝", "djvu": "🗂️", "cbz": "🖼️", "cbr": "🖼️",
 }
 
 
-# ── Search ────────────────────────────────────────────────────────────────────
+# ── Search (scrape — no auth needed) ─────────────────────────────────────────
 
 def scrape_search(query: str, fmt: str = "") -> list[dict]:
     params = {"q": query, "lang": "", "content": "book_any", "ext": fmt, "sort": ""}
     try:
-        resp = requests.get(
-            f"{ANNAS_BASE}/search",
-            params=params,
-            headers=HEADERS,
-            timeout=15,
-        )
+        resp = requests.get(f"{ANNAS_BASE}/search", params=params, headers=HEADERS, timeout=15)
         resp.raise_for_status()
-    except Exception as e:
+    except Exception:
         return []
 
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -63,19 +51,14 @@ def scrape_search(query: str, fmt: str = "") -> list[dict]:
         try:
             md5 = item["href"].split("/md5/")[1].rstrip("/")
 
-            # Title
             title_el = item.select_one(".text-xl, .text-lg, h3, [class*='title']")
-            title = title_el.get_text(strip=True) if title_el else ""
-            if not title:
-                title = item.get_text(" ", strip=True)[:80]
+            title = title_el.get_text(strip=True) if title_el else item.get_text(" ", strip=True)[:80]
 
-            # Author
             author_el = item.select_one("[class*='author'], .text-sm.italic, .text-gray")
             author = author_el.get_text(strip=True) if author_el else "Unknown"
 
-            # Format + size from badges / small text
             badges = item.select(".bg-\\[\\#0000000f\\], .shrink-0, span")
-            fmt_found, size_found, year_found, lang_found = "", "", "", ""
+            fmt_found = size_found = year_found = lang_found = ""
             for b in badges:
                 t = b.get_text(strip=True).lower()
                 for f in FORMAT_ICONS:
@@ -88,7 +71,6 @@ def scrape_search(query: str, fmt: str = "") -> list[dict]:
                 if re.search(r"\b(en|fr|de|es|ru|zh|ja|pt|it|nl|pl)\b", t):
                     lang_found = b.get_text(strip=True)
 
-            # Thumbnail
             img_el = item.select_one("img")
             cover = img_el["src"] if img_el and img_el.get("src") else ""
 
@@ -112,63 +94,47 @@ def scrape_search(query: str, fmt: str = "") -> list[dict]:
     return results
 
 
-# ── Download helpers ──────────────────────────────────────────────────────────
+# ── Download (official fast-download API) ────────────────────────────────────
 
-def get_download_url(md5: str) -> tuple[str, str]:
-    """Return (direct_url, filename) for a given md5."""
-    detail_url = f"{ANNAS_BASE}/md5/{md5}"
-    try:
-        resp = requests.get(detail_url, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-    except Exception as e:
-        raise RuntimeError(f"Could not fetch detail page: {e}")
+def get_fast_download_url(md5: str) -> str:
+    """Call the official members API to get a direct download URL."""
+    if not ANNAS_API_KEY:
+        raise RuntimeError("ANNAS_ARCHIVE_KEY is not set — add it to your docker-compose env")
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    resp = requests.get(
+        f"{ANNAS_BASE}/dyn/api/fast_download.json",
+        params={"md5": md5, "key": ANNAS_API_KEY},
+        headers=HEADERS,
+        timeout=20,
+    )
 
-    # Grab filename hint from page
-    filename = f"{md5}.epub"
-    for el in soup.select("a[href*='/slow_download/'], a[href*='/fast_download/']"):
-        href = el.get("href", "")
-        if href:
-            # Try to get filename from page title or heading
-            pass
+    if resp.status_code == 403:
+        raise RuntimeError("API key rejected — check ANNAS_ARCHIVE_KEY in your env")
+    if resp.status_code == 404:
+        raise RuntimeError(f"MD5 not found on Anna's Archive: {md5}")
+    resp.raise_for_status()
 
-    title_el = soup.select_one("h1")
-    if title_el:
-        raw = title_el.get_text(strip=True)[:60]
-        safe = re.sub(r'[^\w\s\-]', '', raw).strip().replace(" ", "_")
-        # we'll append extension after we know format
+    data = resp.json()
 
-    # Try libgen fast links first, then slow download
-    fast_links = soup.select("a[href*='library.lol'], a[href*='libgen'], a[href*='cloudflare']")
-    for link in fast_links:
-        href = link.get("href", "")
-        if href.startswith("http"):
-            return href, filename
+    # The API returns the download URL — field name may be 'download_url' or 'url'
+    url = data.get("download_url") or data.get("url") or data.get("link")
+    if not url:
+        raise RuntimeError(f"API returned no download URL. Response: {data}")
 
-    # Fall back to Anna's own slow download
-    slow = soup.select_one("a[href*='/slow_download/']")
-    if slow:
-        href = slow["href"]
-        if not href.startswith("http"):
-            href = ANNAS_BASE + href
-        return href, filename
-
-    raise RuntimeError("No download link found on detail page")
+    return url
 
 
 def download_file(url: str, dest_dir: str, job_id: str) -> Path:
     """Stream-download a file, updating job progress."""
     Path(dest_dir).mkdir(parents=True, exist_ok=True)
 
-    # Follow redirects to get final filename
     session = requests.Session()
     session.headers.update(HEADERS)
 
-    resp = session.get(url, stream=True, timeout=60, allow_redirects=True)
+    resp = session.get(url, stream=True, timeout=120, allow_redirects=True)
     resp.raise_for_status()
 
-    # Determine filename from Content-Disposition or URL
+    # Filename from Content-Disposition or URL
     cd = resp.headers.get("Content-Disposition", "")
     fname_match = re.search(r'filename[^;=\n]*=(["\']?)([^\n"\']+)\1', cd)
     if fname_match:
@@ -177,7 +143,6 @@ def download_file(url: str, dest_dir: str, job_id: str) -> Path:
         filename = urlparse(resp.url).path.split("/")[-1] or f"{job_id}.epub"
         filename = requests.utils.unquote(filename)
 
-    # Sanitize
     filename = re.sub(r'[^\w\s\-\.]', '', filename).strip() or f"{job_id}.epub"
     dest_path = Path(dest_dir) / filename
 
@@ -202,37 +167,35 @@ def calibre_import(filepath: Path, job_id: str):
     jobs[job_id]["status"] = "Importing into Calibre..."
     try:
         result = subprocess.run(
-            ["calibredb", "add", str(filepath),
-             "--library-path", CALIBRE_LIBRARY,
-             "--duplicates"],
-            capture_output=True, text=True, timeout=120
+            ["calibredb", "add", str(filepath), "--library-path", CALIBRE_LIBRARY, "--duplicates"],
+            capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:
-            jobs[job_id]["status"] = "Done! Added to Calibre."
+            jobs[job_id]["status"] = "✅ Done! Added to Calibre."
             jobs[job_id]["progress"] = 100
             jobs[job_id]["done"] = True
         else:
-            jobs[job_id]["status"] = f"Downloaded but Calibre import failed: {result.stderr[:200]}"
+            jobs[job_id]["status"] = f"⚠️ Downloaded but Calibre import failed: {result.stderr[:200]}"
             jobs[job_id]["done"] = True
     except FileNotFoundError:
-        jobs[job_id]["status"] = "Downloaded (calibredb not found — check container setup)"
+        jobs[job_id]["status"] = "⚠️ Downloaded (calibredb not found — check container setup)"
         jobs[job_id]["done"] = True
     except Exception as e:
-        jobs[job_id]["status"] = f"Import error: {str(e)[:200]}"
+        jobs[job_id]["status"] = f"⚠️ Import error: {str(e)[:200]}"
         jobs[job_id]["done"] = True
 
 
 def download_and_import(md5: str, job_id: str):
     try:
-        jobs[job_id]["status"] = "Fetching download link..."
-        url, hint_filename = get_download_url(md5)
+        jobs[job_id]["status"] = "Requesting download URL..."
+        url = get_fast_download_url(md5)
 
         jobs[job_id]["status"] = "Starting download..."
         filepath = download_file(url, DOWNLOAD_DIR, job_id)
 
         calibre_import(filepath, job_id)
     except Exception as e:
-        jobs[job_id]["status"] = f"Error: {str(e)[:300]}"
+        jobs[job_id]["status"] = f"❌ {str(e)[:300]}"
         jobs[job_id]["done"] = True
 
 
@@ -246,7 +209,7 @@ def index():
 @app.route("/api/search")
 def api_search():
     query = request.args.get("q", "").strip()
-    fmt = request.args.get("format", "").strip().lower()
+    fmt   = request.args.get("format", "").strip().lower()
     if not query:
         return jsonify({"results": [], "error": "No query provided"})
     results = scrape_search(query, fmt)
@@ -256,17 +219,15 @@ def api_search():
 @app.route("/api/download", methods=["POST"])
 def api_download():
     data = request.get_json()
-    md5 = data.get("md5", "").strip()
+    md5  = data.get("md5", "").strip()
     if not md5 or not re.match(r'^[a-fA-F0-9]{32}$', md5):
         return jsonify({"error": "Invalid md5"}), 400
 
+    if not ANNAS_API_KEY:
+        return jsonify({"error": "ANNAS_ARCHIVE_KEY not set in environment"}), 500
+
     job_id = str(uuid.uuid4())[:8]
-    jobs[job_id] = {
-        "md5": md5,
-        "status": "Queued",
-        "progress": 0,
-        "done": False,
-    }
+    jobs[job_id] = {"md5": md5, "status": "Queued", "progress": 0, "done": False}
 
     thread = threading.Thread(target=download_and_import, args=(md5, job_id), daemon=True)
     thread.start()
@@ -285,6 +246,12 @@ def api_status(job_id):
 @app.route("/api/jobs")
 def api_jobs():
     return jsonify({"jobs": jobs})
+
+
+@app.route("/api/config")
+def api_config():
+    """Let the frontend know if the API key is configured."""
+    return jsonify({"api_key_set": bool(ANNAS_API_KEY)})
 
 
 if __name__ == "__main__":
