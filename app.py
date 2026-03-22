@@ -188,14 +188,12 @@ def calibre_import(filepath: Path, job_id: str):
     """Add the downloaded file to Calibre library using calibredb."""
     jobs[job_id]["status"] = "Importing into Calibre..."
     try:
-        result = subprocess.run(
-            ["calibredb", "add", str(filepath),
-             "--library-path", f"http://{CALIBRE_HOST}:{CALIBRE_PORT}",
-             "--username", CALIBRE_USER,
-             "--password", CALIBRE_PASS,
-             "--duplicates"],
-            capture_output=True, text=True, timeout=120,
-        )
+        cmd = ["calibredb", "add", str(filepath),
+               "--library-path", f"http://{CALIBRE_HOST}:{CALIBRE_PORT}",
+               "--duplicates"]
+        if CALIBRE_USER:
+            cmd += ["--username", CALIBRE_USER, "--password", CALIBRE_PASS]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode == 0:
             jobs[job_id]["status"] = "✅ Done! Added to Calibre."
             jobs[job_id]["progress"] = 100
