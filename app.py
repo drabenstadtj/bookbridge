@@ -14,10 +14,13 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-CALIBRE_LIBRARY = os.environ.get("CALIBRE_LIBRARY", "/calibre-library")
 DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/downloads")
 ANNAS_BASE = "https://annas-archive.gl"
 ANNAS_API_KEY = os.environ.get("ANNAS_ARCHIVE_KEY", "")
+CALIBRE_HOST = os.environ.get("CALIBRE_HOST", "calibre")
+CALIBRE_PORT = os.environ.get("CALIBRE_PORT", "9092")
+CALIBRE_USER = os.environ.get("CALIBRE_USER", "")
+CALIBRE_PASS = os.environ.get("CALIBRE_PASS", "")
 
 # In-memory job tracker
 jobs = {}
@@ -186,7 +189,11 @@ def calibre_import(filepath: Path, job_id: str):
     jobs[job_id]["status"] = "Importing into Calibre..."
     try:
         result = subprocess.run(
-            ["calibredb", "add", str(filepath), "--library-path", CALIBRE_LIBRARY, "--duplicates"],
+            ["calibredb", "add", str(filepath),
+             "--library-path", f"http://{CALIBRE_HOST}:{CALIBRE_PORT}",
+             "--username", CALIBRE_USER,
+             "--password", CALIBRE_PASS,
+             "--duplicates"],
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:
