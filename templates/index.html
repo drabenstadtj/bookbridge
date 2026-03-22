@@ -5,12 +5,27 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>BookBridge</title>
         <style>
-            *,
-            *::before,
-            *::after {
+            *, *::before, *::after {
                 box-sizing: border-box;
                 margin: 0;
                 padding: 0;
+            }
+
+            :root {
+                --bg: #0f1117;
+                --surface: #1a1d27;
+                --border: #2a2d3a;
+                --text: #e2e0d9;
+                --muted: #6b7080;
+                --accent: #4a9eff;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: system-ui, sans-serif;
+                font-size: 14px;
+                line-height: 1.5;
             }
 
             header {
@@ -18,6 +33,8 @@
                 top: 0;
                 z-index: 100;
                 padding: 0 2rem;
+                background: var(--bg);
+                border-bottom: 1px solid var(--border);
             }
             .header-inner {
                 max-width: 1200px;
@@ -25,7 +42,12 @@
                 display: flex;
                 align-items: center;
                 gap: 2rem;
-                height: 64px;
+                height: 56px;
+            }
+            .logo {
+                font-weight: 600;
+                white-space: nowrap;
+                color: var(--text);
             }
 
             .search-wrap {
@@ -34,19 +56,32 @@
                 gap: 0.5rem;
                 align-items: center;
             }
-            .search-input {
-                flex: 1;
-                padding: 0.55rem 1rem;
+            .search-input, .format-select {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                color: var(--text);
+                border-radius: 4px;
+                padding: 0.45rem 0.75rem;
+                font-size: 13px;
+                outline: none;
             }
-            .format-select {
-                padding: 0.55rem 0.75rem;
-                cursor: pointer;
+            .search-input { flex: 1; }
+            .search-input:focus, .format-select:focus {
+                border-color: var(--accent);
             }
+            .format-select { cursor: pointer; }
             .btn {
-                padding: 0.55rem 1.25rem;
+                padding: 0.45rem 1rem;
+                background: var(--accent);
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                font-size: 13px;
+                font-weight: 500;
                 cursor: pointer;
                 white-space: nowrap;
             }
+            .btn:hover { opacity: 0.85; }
 
             main {
                 max-width: 1200px;
@@ -57,29 +92,44 @@
             .state-msg {
                 text-align: center;
                 padding: 4rem 2rem;
+                color: var(--muted);
+            }
+
+            #results-count {
+                font-size: 12px;
+                color: var(--muted);
+                margin-bottom: 1rem;
             }
 
             .results-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-                gap: 1rem;
+                gap: 0.75rem;
             }
 
             .book-card {
-                padding: 1.1rem 1.25rem;
+                padding: 1rem;
                 display: flex;
-                gap: 1rem;
-                align-items: flex-start;
+                gap: 0.85rem;
+                align-items: stretch;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 6px;
             }
+            .book-card:hover { border-color: #3a3d4a; }
 
             .book-cover {
-                width: 52px;
-                height: 70px;
+                width: 72px;
+                min-height: 109px;
                 flex-shrink: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 overflow: hidden;
+                border-radius: 3px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                font-size: 1.2rem;
             }
             .book-cover img {
                 width: 100%;
@@ -90,16 +140,28 @@
             .book-info {
                 flex: 1;
                 min-width: 0;
+                display: flex;
+                flex-direction: column;
             }
-
+            .book-meta-wrap {
+                flex: 1;
+            }
             .book-title {
-                margin-bottom: 0.25rem;
+                font-weight: 500;
+                margin-bottom: 0.2rem;
                 overflow: hidden;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
             }
+            .book-title a {
+                color: inherit;
+                text-decoration: none;
+            }
+            .book-title a:hover { text-decoration: underline; }
             .book-author {
+                font-size: 12px;
+                color: var(--muted);
                 margin-bottom: 0.5rem;
                 white-space: nowrap;
                 overflow: hidden;
@@ -109,108 +171,123 @@
             .book-meta {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 0.35rem;
-                margin-bottom: 0.75rem;
+                gap: 0.3rem;
+                margin-bottom: 0.6rem;
+            }
+            .tag {
+                font-size: 11px;
+                padding: 0.15rem 0.4rem;
+                border-radius: 3px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                color: var(--muted);
+                text-transform: uppercase;
             }
 
             .btn-download {
                 width: 100%;
-                padding: 0.45rem;
+                padding: 0.4rem;
+                background: transparent;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                color: var(--muted);
+                font-size: 12px;
                 cursor: pointer;
             }
-            .btn-download:disabled {
-                cursor: default;
-            }
+            .btn-download:hover { border-color: var(--accent); color: var(--accent); }
+            .btn-download:disabled { opacity: 0.5; cursor: default; }
 
             #jobs-panel {
                 position: fixed;
                 bottom: 1.5rem;
                 right: 1.5rem;
-                width: 340px;
-                max-height: 400px;
+                width: 320px;
+                max-height: 380px;
                 overflow: hidden;
                 display: none;
                 flex-direction: column;
                 z-index: 200;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 6px;
             }
-            #jobs-panel.visible {
-                display: flex;
-            }
+            #jobs-panel.visible { display: flex; }
 
             .jobs-header {
-                padding: 0.75rem 1rem;
+                padding: 0.6rem 0.85rem;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                border-bottom: 1px solid var(--border);
+                font-size: 12px;
+                color: var(--muted);
             }
+            .jobs-header button {
+                background: none;
+                border: none;
+                color: var(--muted);
+                cursor: pointer;
+                font-size: 14px;
+                line-height: 1;
+            }
+            .jobs-header button:hover { color: var(--text); }
+
             .jobs-list {
                 overflow-y: auto;
                 padding: 0.5rem;
                 display: flex;
                 flex-direction: column;
-                gap: 0.5rem;
+                gap: 0.4rem;
             }
             .job-item {
-                padding: 0.6rem 0.8rem;
+                padding: 0.5rem 0.7rem;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+            }
+            .job-title {
+                font-size: 12px;
+                font-weight: 500;
+                margin-bottom: 0.2rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .job-status {
+                font-size: 11px;
+                color: var(--muted);
             }
 
             .progress-bar {
-                height: 3px;
-                margin-top: 0.4rem;
+                height: 2px;
+                background: var(--border);
+                border-radius: 1px;
+                margin-top: 0.35rem;
                 overflow: hidden;
             }
             .progress-fill {
                 height: 100%;
+                background: var(--accent);
             }
 
             #jobs-btn {
                 position: fixed;
                 bottom: 1.5rem;
                 right: 1.5rem;
-                padding: 0.6rem 1.1rem;
+                padding: 0.5rem 1rem;
+                background: var(--accent);
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 500;
                 cursor: pointer;
                 z-index: 199;
                 display: none;
             }
-            #jobs-btn.visible {
-                display: block;
-            }
+            #jobs-btn:hover { opacity: 0.85; }
+            #jobs-btn.visible { display: block; }
 
-            .skeleton-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-                gap: 1rem;
-            }
-            .skeleton-card {
-                padding: 1.1rem 1.25rem;
-                height: 130px;
-                display: flex;
-                gap: 1rem;
-            }
-            .skel-cover {
-                width: 52px;
-                height: 70px;
-                flex-shrink: 0;
-            }
-            .skel-lines {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-                padding-top: 0.2rem;
-            }
-            .skel-line {
-                height: 12px;
-            }
-            .skel-line.w80 {
-                width: 80%;
-            }
-            .skel-line.w50 {
-                width: 50%;
-            }
-            .skel-line.w30 {
-                width: 30%;
-            }
         </style>
     </head>
     <body>
@@ -291,24 +368,7 @@
             }
 
             function showSkeleton() {
-                document.getElementById("state-area").innerHTML = `
-                    <div class="skeleton-grid">
-                        ${Array(6)
-                            .fill(
-                                `
-                            <div class="skeleton-card">
-                                <div class="skel-cover"></div>
-                                <div class="skel-lines">
-                                    <div class="skel-line w80"></div>
-                                    <div class="skel-line w50"></div>
-                                    <div class="skel-line w30"></div>
-                                </div>
-                            </div>`,
-                            )
-                            .join("")}
-                    </div>`;
-                document.getElementById("results-grid").innerHTML = "";
-                document.getElementById("results-count").style.display = "none";
+                showState("Searching…");
             }
 
             function showState(msg) {
@@ -360,9 +420,11 @@
                         <div class="book-card" data-md5="${book.md5}">
                             <div class="book-cover">${coverHtml}</div>
                             <div class="book-info">
-                                <div class="book-title">${escHtml(book.title)}</div>
-                                <div class="book-author">${escHtml(book.author)}</div>
-                                <div class="book-meta">${tags}</div>
+                                <div class="book-meta-wrap">
+                                    <div class="book-title"><a href="https://annas-archive.gl/md5/${book.md5}" target="_blank" rel="noopener">${escHtml(book.title)}</a></div>
+                                    <div class="book-author">${escHtml(book.author)}</div>
+                                    <div class="book-meta">${tags}</div>
+                                </div>
                                 <button class="btn-download" data-md5="${book.md5}" data-title="${escHtml(book.title)}"
                                         onclick="startDownload(this)">
                                     send to calibre

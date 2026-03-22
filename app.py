@@ -16,7 +16,7 @@ CORS(app)
 
 CALIBRE_LIBRARY = os.environ.get("CALIBRE_LIBRARY", "/calibre-library")
 DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/downloads")
-ANNAS_BASE = "https://annas-archive.org"
+ANNAS_BASE = "https://annas-archive.gl"
 ANNAS_API_KEY = os.environ.get("ANNAS_ARCHIVE_KEY", "")
 
 # In-memory job tracker
@@ -41,38 +41,57 @@ def scrape_search(query: str, fmt: str = "") -> list[dict]:
     try:
         resp = requests.get(f"{ANNAS_BASE}/search", params=params, headers=HEADERS, timeout=15)
         resp.raise_for_status()
-    except Exception:
+    except Exception as e:
+        print(f"[scrape] request failed: {e}", flush=True)
         return []
 
     soup = BeautifulSoup(resp.text, "html.parser")
     results = []
 
-    for item in soup.select("a[href^='/md5/']")[:30]:
+    # First pass: collect cover images keyed by md5
+    covers = {}
+    for a in soup.select("a[href^='/md5/']"):
+        img = a.select_one("img")
+        if img and img.get("src"):
+            md5 = a["href"].split("/md5/")[1].rstrip("/")
+            src = img["src"]
+            if src.startswith("/"):
+                src = ANNAS_BASE + src
+            covers[md5] = src
+
+    # Title links are md5 links with text content (not cover links)
+    title_links = [a for a in soup.select("a[href^='/md5/']") if a.get_text(strip=True)]
+
+    for item in title_links[:30]:
         try:
             md5 = item["href"].split("/md5/")[1].rstrip("/")
+            title = item.get_text(strip=True)
+            parent = item.parent
 
-            title_el = item.select_one(".text-xl, .text-lg, h3, [class*='title']")
-            title = title_el.get_text(strip=True) if title_el else item.get_text(" ", strip=True)[:80]
+            # Author: sibling <a> containing a user-edit icon span
+            author_el = parent.select_one("span[class*='user-edit']")
+            author = author_el.parent.get_text(strip=True) if author_el else "Unknown"
 
-            author_el = item.select_one("[class*='author'], .text-sm.italic, .text-gray")
-            author = author_el.get_text(strip=True) if author_el else "Unknown"
-
-            badges = item.select(".bg-\\[\\#0000000f\\], .shrink-0, span")
-            fmt_found = size_found = year_found = lang_found = ""
-            for b in badges:
-                t = b.get_text(strip=True).lower()
+            # Format: from the file path div (e.g. "...Daemon.mobi")
+            path_div = parent.select_one("div[class*='font-mono']")
+            fmt_found = ""
+            if path_div:
+                path_text = path_div.get_text(strip=True).lower()
                 for f in FORMAT_ICONS:
-                    if f in t:
+                    if path_text.endswith("." + f) or ("." + f + " ") in path_text:
                         fmt_found = f
-                if re.search(r"\d+(\.\d+)?\s*(mb|kb|gb)", t):
-                    size_found = b.get_text(strip=True)
-                if re.search(r"\b(19|20)\d{2}\b", t):
-                    year_found = re.search(r"\b(19|20)\d{2}\b", t).group()
-                if re.search(r"\b(en|fr|de|es|ru|zh|ja|pt|it|nl|pl)\b", t):
-                    lang_found = b.get_text(strip=True)
+                        break
 
-            img_el = item.select_one("img")
-            cover = img_el["src"] if img_el and img_el.get("src") else ""
+            # Year: from the publisher/company sibling
+            year_found = ""
+            company_el = parent.select_one("span[class*='company']")
+            if company_el:
+                pub_text = company_el.parent.get_text(strip=True)
+                m = re.search(r"\b(19|20)\d{2}\b", pub_text)
+                if m:
+                    year_found = m.group()
+
+            cover = covers.get(md5, "")
 
             if not title or not md5:
                 continue
@@ -82,9 +101,9 @@ def scrape_search(query: str, fmt: str = "") -> list[dict]:
                 "title": title[:120],
                 "author": author[:80],
                 "format": fmt_found or "unknown",
-                "size": size_found,
+                "size": "",
                 "year": year_found,
-                "language": lang_found,
+                "language": "",
                 "cover": cover,
                 "icon": FORMAT_ICONS.get(fmt_found, "📚"),
             })
