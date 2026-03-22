@@ -4,11 +4,6 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>BookBridge</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap"
-            rel="stylesheet"
-        />
         <style>
             *,
             *::before,
@@ -18,56 +13,7 @@
                 padding: 0;
             }
 
-            :root {
-                --bg: #0d0f12;
-                --surface: #141720;
-                --card: #1a1e2a;
-                --border: #252b3a;
-                --accent: #c8a96e;
-                --accent2: #7eb8d4;
-                --text: #e8e4d9;
-                --muted: #7a8099;
-                --danger: #e05c5c;
-                --success: #6abf85;
-                --epub: #c8a96e;
-                --pdf: #e05c5c;
-                --mobi: #7eb8d4;
-                --azw3: #7eb8d4;
-            }
-
-            body {
-                background: var(--bg);
-                color: var(--text);
-                font-family: "Inter", sans-serif;
-                font-weight: 300;
-                min-height: 100vh;
-                background-image:
-                    radial-gradient(
-                        ellipse 80% 40% at 50% -10%,
-                        rgba(200, 169, 110, 0.07) 0%,
-                        transparent 70%
-                    ),
-                    repeating-linear-gradient(
-                        0deg,
-                        transparent,
-                        transparent 40px,
-                        rgba(255, 255, 255, 0.012) 40px,
-                        rgba(255, 255, 255, 0.012) 41px
-                    ),
-                    repeating-linear-gradient(
-                        90deg,
-                        transparent,
-                        transparent 40px,
-                        rgba(255, 255, 255, 0.012) 40px,
-                        rgba(255, 255, 255, 0.012) 41px
-                    );
-            }
-
-            /* ── Header ── */
             header {
-                border-bottom: 1px solid var(--border);
-                background: rgba(13, 15, 18, 0.95);
-                backdrop-filter: blur(12px);
                 position: sticky;
                 top: 0;
                 z-index: 100;
@@ -81,23 +27,7 @@
                 gap: 2rem;
                 height: 64px;
             }
-            .logo {
-                font-family: "Playfair Display", serif;
-                font-size: 1.4rem;
-                font-weight: 700;
-                color: var(--accent);
-                letter-spacing: 0.02em;
-                white-space: nowrap;
-            }
-            .logo span {
-                color: var(--muted);
-                font-weight: 400;
-                font-size: 0.75rem;
-                margin-left: 0.5rem;
-                vertical-align: middle;
-            }
 
-            /* ── Search bar ── */
             .search-wrap {
                 flex: 1;
                 display: flex;
@@ -106,93 +36,27 @@
             }
             .search-input {
                 flex: 1;
-                background: var(--surface);
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                color: var(--text);
-                font-family: "Inter", sans-serif;
-                font-size: 0.9rem;
                 padding: 0.55rem 1rem;
-                outline: none;
-                transition:
-                    border-color 0.2s,
-                    box-shadow 0.2s;
             }
-            .search-input:focus {
-                border-color: var(--accent);
-                box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.12);
-            }
-            .search-input::placeholder {
-                color: var(--muted);
-            }
-
             .format-select {
-                background: var(--surface);
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                color: var(--text);
-                font-family: "Inter", sans-serif;
-                font-size: 0.85rem;
                 padding: 0.55rem 0.75rem;
-                outline: none;
                 cursor: pointer;
-                transition: border-color 0.2s;
             }
-            .format-select:focus {
-                border-color: var(--accent);
-            }
-
             .btn {
                 padding: 0.55rem 1.25rem;
-                border-radius: 6px;
-                border: none;
-                font-family: "Inter", sans-serif;
-                font-size: 0.85rem;
-                font-weight: 500;
                 cursor: pointer;
-                transition: all 0.15s;
                 white-space: nowrap;
             }
-            .btn-primary {
-                background: var(--accent);
-                color: #0d0f12;
-            }
-            .btn-primary:hover {
-                background: #dbbe82;
-                transform: translateY(-1px);
-            }
-            .btn-primary:active {
-                transform: translateY(0);
-            }
 
-            /* ── Main ── */
             main {
                 max-width: 1200px;
                 margin: 0 auto;
                 padding: 2rem;
             }
 
-            /* ── State messages ── */
             .state-msg {
                 text-align: center;
                 padding: 4rem 2rem;
-                color: var(--muted);
-                font-size: 0.9rem;
-            }
-            .state-msg .big {
-                font-family: "Playfair Display", serif;
-                font-size: 2rem;
-                color: var(--border);
-                margin-bottom: 0.75rem;
-            }
-
-            /* ── Results grid ── */
-            #results-count {
-                font-size: 0.78rem;
-                color: var(--muted);
-                font-family: "JetBrains Mono", monospace;
-                margin-bottom: 1.25rem;
-                letter-spacing: 0.04em;
             }
 
             .results-grid {
@@ -202,49 +66,19 @@
             }
 
             .book-card {
-                background: var(--card);
-                border: 1px solid var(--border);
-                border-radius: 10px;
                 padding: 1.1rem 1.25rem;
                 display: flex;
                 gap: 1rem;
                 align-items: flex-start;
-                transition:
-                    border-color 0.2s,
-                    transform 0.15s,
-                    box-shadow 0.2s;
-                position: relative;
-                overflow: hidden;
-            }
-            .book-card::before {
-                content: "";
-                position: absolute;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                width: 3px;
-                border-radius: 10px 0 0 10px;
-                background: var(--fmt-color, var(--border));
-                transition: opacity 0.2s;
-            }
-            .book-card:hover {
-                border-color: rgba(200, 169, 110, 0.3);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             }
 
             .book-cover {
                 width: 52px;
                 height: 70px;
-                border-radius: 4px;
-                object-fit: cover;
-                background: var(--surface);
-                border: 1px solid var(--border);
                 flex-shrink: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 1.4rem;
                 overflow: hidden;
             }
             .book-cover img {
@@ -259,11 +93,6 @@
             }
 
             .book-title {
-                font-family: "Playfair Display", serif;
-                font-size: 0.95rem;
-                font-weight: 600;
-                color: var(--text);
-                line-height: 1.3;
                 margin-bottom: 0.25rem;
                 overflow: hidden;
                 display: -webkit-box;
@@ -271,8 +100,6 @@
                 -webkit-box-orient: vertical;
             }
             .book-author {
-                font-size: 0.78rem;
-                color: var(--muted);
                 margin-bottom: 0.5rem;
                 white-space: nowrap;
                 overflow: hidden;
@@ -285,92 +112,23 @@
                 gap: 0.35rem;
                 margin-bottom: 0.75rem;
             }
-            .tag {
-                font-family: "JetBrains Mono", monospace;
-                font-size: 0.65rem;
-                letter-spacing: 0.05em;
-                padding: 0.2rem 0.5rem;
-                border-radius: 4px;
-                background: var(--surface);
-                border: 1px solid var(--border);
-                color: var(--muted);
-                text-transform: uppercase;
-            }
-            .tag.fmt-epub {
-                color: var(--epub);
-                border-color: rgba(200, 169, 110, 0.3);
-                background: rgba(200, 169, 110, 0.08);
-            }
-            .tag.fmt-pdf {
-                color: var(--pdf);
-                border-color: rgba(224, 92, 92, 0.3);
-                background: rgba(224, 92, 92, 0.08);
-            }
-            .tag.fmt-mobi,
-            .tag.fmt-azw3 {
-                color: var(--mobi);
-                border-color: rgba(126, 184, 212, 0.3);
-                background: rgba(126, 184, 212, 0.08);
-            }
 
             .btn-download {
                 width: 100%;
                 padding: 0.45rem;
-                background: transparent;
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                color: var(--muted);
-                font-family: "JetBrains Mono", monospace;
-                font-size: 0.72rem;
                 cursor: pointer;
-                transition: all 0.15s;
-                letter-spacing: 0.04em;
-            }
-            .btn-download:hover {
-                border-color: var(--accent);
-                color: var(--accent);
-                background: rgba(200, 169, 110, 0.06);
             }
             .btn-download:disabled {
-                opacity: 0.5;
                 cursor: default;
             }
-            .btn-download.downloading {
-                border-color: var(--accent2);
-                color: var(--accent2);
-                animation: pulse 1.5s ease-in-out infinite;
-            }
-            .btn-download.done {
-                border-color: var(--success);
-                color: var(--success);
-            }
-            .btn-download.error {
-                border-color: var(--danger);
-                color: var(--danger);
-            }
 
-            @keyframes pulse {
-                0%,
-                100% {
-                    opacity: 1;
-                }
-                50% {
-                    opacity: 0.5;
-                }
-            }
-
-            /* ── Jobs panel ── */
             #jobs-panel {
                 position: fixed;
                 bottom: 1.5rem;
                 right: 1.5rem;
                 width: 340px;
                 max-height: 400px;
-                background: var(--surface);
-                border: 1px solid var(--border);
-                border-radius: 12px;
                 overflow: hidden;
-                box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
                 display: none;
                 flex-direction: column;
                 z-index: 200;
@@ -381,12 +139,6 @@
 
             .jobs-header {
                 padding: 0.75rem 1rem;
-                border-bottom: 1px solid var(--border);
-                font-family: "JetBrains Mono", monospace;
-                font-size: 0.72rem;
-                letter-spacing: 0.06em;
-                color: var(--muted);
-                text-transform: uppercase;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -399,104 +151,41 @@
                 gap: 0.5rem;
             }
             .job-item {
-                background: var(--card);
-                border: 1px solid var(--border);
-                border-radius: 8px;
                 padding: 0.6rem 0.8rem;
-                font-size: 0.8rem;
             }
-            .job-item .job-title {
-                font-weight: 500;
-                margin-bottom: 0.3rem;
-                font-size: 0.78rem;
-                color: var(--text);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .job-status {
-                font-family: "JetBrains Mono", monospace;
-                font-size: 0.7rem;
-                color: var(--muted);
-            }
+
             .progress-bar {
                 height: 3px;
-                background: var(--border);
-                border-radius: 2px;
                 margin-top: 0.4rem;
                 overflow: hidden;
             }
             .progress-fill {
                 height: 100%;
-                background: var(--accent2);
-                border-radius: 2px;
-                transition: width 0.3s;
             }
 
-            /* floating jobs button */
             #jobs-btn {
                 position: fixed;
                 bottom: 1.5rem;
                 right: 1.5rem;
-                background: var(--accent);
-                color: #0d0f12;
-                border: none;
-                border-radius: 50px;
                 padding: 0.6rem 1.1rem;
-                font-family: "JetBrains Mono", monospace;
-                font-size: 0.75rem;
-                font-weight: 500;
                 cursor: pointer;
                 z-index: 199;
                 display: none;
-                box-shadow: 0 4px 16px rgba(200, 169, 110, 0.35);
-                letter-spacing: 0.04em;
-                transition: transform 0.15s;
-            }
-            #jobs-btn:hover {
-                transform: scale(1.05);
             }
             #jobs-btn.visible {
                 display: block;
             }
 
-            /* loading spinner */
-            .spinner {
-                display: inline-block;
-                width: 14px;
-                height: 14px;
-                border: 2px solid var(--border);
-                border-top-color: var(--accent);
-                border-radius: 50%;
-                animation: spin 0.7s linear infinite;
-                vertical-align: middle;
-                margin-right: 0.4rem;
-            }
-            @keyframes spin {
-                to {
-                    transform: rotate(360deg);
-                }
-            }
-
-            /* skeleton */
             .skeleton-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
                 gap: 1rem;
             }
             .skeleton-card {
-                background: var(--card);
-                border: 1px solid var(--border);
-                border-radius: 10px;
                 padding: 1.1rem 1.25rem;
                 height: 130px;
                 display: flex;
                 gap: 1rem;
-            }
-            .skel {
-                background: var(--surface);
-                border-radius: 4px;
-                animation: shimmer 1.4s ease-in-out infinite;
             }
             .skel-cover {
                 width: 52px;
@@ -522,34 +211,11 @@
             .skel-line.w30 {
                 width: 30%;
             }
-            @keyframes shimmer {
-                0%,
-                100% {
-                    opacity: 0.5;
-                }
-                50% {
-                    opacity: 1;
-                }
-            }
-
-            .close-btn {
-                background: none;
-                border: none;
-                color: var(--muted);
-                cursor: pointer;
-                font-size: 1rem;
-                line-height: 1;
-                padding: 0 0.2rem;
-            }
-            .close-btn:hover {
-                color: var(--text);
-            }
         </style>
     </head>
     <body>
         <header>
             <div class="header-inner">
-                <div class="logo">BookBridge <span>→ calibre</span></div>
                 <div class="search-wrap">
                     <input
                         class="search-input"
@@ -566,9 +232,7 @@
                         <option value="azw3">AZW3</option>
                         <option value="fb2">FB2</option>
                     </select>
-                    <button class="btn btn-primary" id="search-btn">
-                        Search
-                    </button>
+                    <button class="btn" id="search-btn">Search</button>
                 </div>
             </div>
         </header>
@@ -576,7 +240,6 @@
         <main>
             <div id="state-area">
                 <div class="state-msg">
-                    <div class="big">📚</div>
                     Search for a book to download it straight into your Calibre
                     library.
                 </div>
@@ -585,16 +248,12 @@
             <div id="results-grid" class="results-grid"></div>
         </main>
 
-        <!-- Floating jobs button -->
-        <button id="jobs-btn">
-            ⬇ Downloads <span id="jobs-count">0</span>
-        </button>
+        <button id="jobs-btn">Downloads <span id="jobs-count">0</span></button>
 
-        <!-- Jobs panel -->
         <div id="jobs-panel">
             <div class="jobs-header">
                 Active Downloads
-                <button class="close-btn" id="close-jobs">✕</button>
+                <button id="close-jobs">✕</button>
             </div>
             <div class="jobs-list" id="jobs-list"></div>
         </div>
@@ -627,34 +286,34 @@
                     const data = await res.json();
                     renderResults(data.results || []);
                 } catch (e) {
-                    showState("❌", "Search failed — is the server running?");
+                    showState("Search failed — is the server running?");
                 }
             }
 
             function showSkeleton() {
                 document.getElementById("state-area").innerHTML = `
-      <div class="skeleton-grid">
-        ${Array(6)
-            .fill(
-                `
-          <div class="skeleton-card">
-            <div class="skel skel-cover"></div>
-            <div class="skel-lines">
-              <div class="skel skel-line w80"></div>
-              <div class="skel skel-line w50"></div>
-              <div class="skel skel-line w30"></div>
-            </div>
-          </div>`,
-            )
-            .join("")}
-      </div>`;
+                    <div class="skeleton-grid">
+                        ${Array(6)
+                            .fill(
+                                `
+                            <div class="skeleton-card">
+                                <div class="skel-cover"></div>
+                                <div class="skel-lines">
+                                    <div class="skel-line w80"></div>
+                                    <div class="skel-line w50"></div>
+                                    <div class="skel-line w30"></div>
+                                </div>
+                            </div>`,
+                            )
+                            .join("")}
+                    </div>`;
                 document.getElementById("results-grid").innerHTML = "";
                 document.getElementById("results-count").style.display = "none";
             }
 
-            function showState(icon, msg) {
-                document.getElementById("state-area").innerHTML = `
-      <div class="state-msg"><div class="big">${icon}</div>${msg}</div>`;
+            function showState(msg) {
+                document.getElementById("state-area").innerHTML =
+                    `<div class="state-msg">${msg}</div>`;
                 document.getElementById("results-grid").innerHTML = "";
                 document.getElementById("results-count").style.display = "none";
             }
@@ -666,7 +325,6 @@
 
                 if (!results.length) {
                     showState(
-                        "🔍",
                         "No results found. Try different keywords or format.",
                     );
                     return;
@@ -677,22 +335,13 @@
 
                 grid.innerHTML = results
                     .map((book) => {
-                        const fmtClass = `fmt-${book.format}`;
-                        const fmtColor =
-                            book.format === "epub"
-                                ? "var(--epub)"
-                                : book.format === "pdf"
-                                  ? "var(--pdf)"
-                                  : ["mobi", "azw3"].includes(book.format)
-                                    ? "var(--mobi)"
-                                    : "var(--border)";
                         const coverHtml = book.cover
                             ? `<img src="${escHtml(book.cover)}" alt="" loading="lazy" onerror="this.parentElement.textContent='${book.icon}'">`
                             : book.icon;
 
                         const tags = [
                             book.format
-                                ? `<span class="tag ${fmtClass}">${book.format}</span>`
+                                ? `<span class="tag">${book.format}</span>`
                                 : "",
                             book.size
                                 ? `<span class="tag">${escHtml(book.size)}</span>`
@@ -708,18 +357,18 @@
                             .join("");
 
                         return `
-        <div class="book-card" style="--fmt-color:${fmtColor}" data-md5="${book.md5}">
-          <div class="book-cover">${coverHtml}</div>
-          <div class="book-info">
-            <div class="book-title">${escHtml(book.title)}</div>
-            <div class="book-author">${escHtml(book.author)}</div>
-            <div class="book-meta">${tags}</div>
-            <button class="btn-download" data-md5="${book.md5}" data-title="${escHtml(book.title)}"
-                    onclick="startDownload(this)">
-              ↓ &nbsp;send to calibre
-            </button>
-          </div>
-        </div>`;
+                        <div class="book-card" data-md5="${book.md5}">
+                            <div class="book-cover">${coverHtml}</div>
+                            <div class="book-info">
+                                <div class="book-title">${escHtml(book.title)}</div>
+                                <div class="book-author">${escHtml(book.author)}</div>
+                                <div class="book-meta">${tags}</div>
+                                <button class="btn-download" data-md5="${book.md5}" data-title="${escHtml(book.title)}"
+                                        onclick="startDownload(this)">
+                                    send to calibre
+                                </button>
+                            </div>
+                        </div>`;
                     })
                     .join("");
             }
@@ -729,8 +378,7 @@
                 const md5 = btn.dataset.md5;
                 const title = btn.dataset.title;
                 btn.disabled = true;
-                btn.classList.add("downloading");
-                btn.innerHTML = '<span class="spinner"></span>queuing…';
+                btn.textContent = "queuing…";
 
                 try {
                     const res = await fetch("/api/download", {
@@ -744,14 +392,12 @@
                         startPolling();
                         showJobsBtn();
                     } else {
-                        btn.classList.remove("downloading");
-                        btn.classList.add("error");
-                        btn.textContent = "❌ failed to queue";
+                        btn.disabled = false;
+                        btn.textContent = "failed to queue";
                     }
                 } catch (e) {
-                    btn.classList.remove("downloading");
-                    btn.classList.add("error");
-                    btn.textContent = "❌ error";
+                    btn.disabled = false;
+                    btn.textContent = "error";
                 }
             }
 
@@ -774,28 +420,16 @@
                         const job = await res.json();
                         const entry = state.jobs[job_id];
 
-                        // Update button on card
                         if (entry.btn) {
-                            if (job.done) {
-                                const success = job.status.startsWith("✅");
-                                entry.btn.classList.remove("downloading");
-                                entry.btn.classList.add(
-                                    success ? "done" : "error",
-                                );
-                                entry.btn.textContent = job.status;
-                                entry.btn.disabled = true;
-                            } else {
-                                entry.btn.innerHTML = `<span class="spinner"></span>${job.status}`;
-                            }
+                            entry.btn.textContent = job.status;
+                            entry.btn.disabled = job.done;
                         }
 
-                        // Store for panel
                         entry.status = job.status;
                         entry.progress = job.progress || 0;
                         entry.done = job.done;
 
                         if (job.done) {
-                            // Keep in list briefly then remove
                             setTimeout(() => {
                                 delete state.jobs[job_id];
                                 updateJobsPanel();
@@ -836,11 +470,11 @@
                 list.innerHTML = entries
                     .map(
                         ([id, j]) => `
-      <div class="job-item">
-        <div class="job-title">${escHtml(j.title || j.md5)}</div>
-        <div class="job-status">${j.status || "Queued"}</div>
-        ${j.progress ? `<div class="progress-bar"><div class="progress-fill" style="width:${j.progress}%"></div></div>` : ""}
-      </div>`,
+                    <div class="job-item">
+                        <div class="job-title">${escHtml(j.title || j.md5)}</div>
+                        <div class="job-status">${j.status || "Queued"}</div>
+                        ${j.progress ? `<div class="progress-bar"><div class="progress-fill" style="width:${j.progress}%"></div></div>` : ""}
+                    </div>`,
                     )
                     .join("");
             }

@@ -15,9 +15,9 @@ app = Flask(__name__)
 CORS(app)
 
 CALIBRE_LIBRARY = os.environ.get("CALIBRE_LIBRARY", "/calibre-library")
-DOWNLOAD_DIR    = os.environ.get("DOWNLOAD_DIR", "/downloads")
-ANNAS_BASE      = "https://annas-archive.org"
-ANNAS_API_KEY   = os.environ.get("ANNAS_ARCHIVE_KEY", "")
+DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/downloads")
+ANNAS_BASE = "https://annas-archive.org"
+ANNAS_API_KEY = os.environ.get("ANNAS_ARCHIVE_KEY", "")
 
 # In-memory job tracker
 jobs = {}
@@ -209,7 +209,7 @@ def index():
 @app.route("/api/search")
 def api_search():
     query = request.args.get("q", "").strip()
-    fmt   = request.args.get("format", "").strip().lower()
+    fmt = request.args.get("format", "").strip().lower()
     if not query:
         return jsonify({"results": [], "error": "No query provided"})
     results = scrape_search(query, fmt)
@@ -218,8 +218,8 @@ def api_search():
 
 @app.route("/api/download", methods=["POST"])
 def api_download():
-    data = request.get_json()
-    md5  = data.get("md5", "").strip()
+    data = request.get_json(silent=True) or {}
+    md5 = data.get("md5", "").strip()
     if not md5 or not re.match(r'^[a-fA-F0-9]{32}$', md5):
         return jsonify({"error": "Invalid md5"}), 400
 
@@ -241,17 +241,6 @@ def api_status(job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
     return jsonify(job)
-
-
-@app.route("/api/jobs")
-def api_jobs():
-    return jsonify({"jobs": jobs})
-
-
-@app.route("/api/config")
-def api_config():
-    """Let the frontend know if the API key is configured."""
-    return jsonify({"api_key_set": bool(ANNAS_API_KEY)})
 
 
 if __name__ == "__main__":
